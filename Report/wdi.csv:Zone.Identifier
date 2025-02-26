@@ -1,0 +1,20 @@
+---
+title: "Assignment-05"
+subtitle: "Exploratory Data Analysis of the World Development Indicators dataset"
+author: "Emma Jinright"
+date: "02-26-2025"
+output: "HTML"
+---
+
+# Introduction
+
+```{r setup}
+pacman::p_load(tidyverse, readr)
+```
+
+```{r dataset}
+wdi <- read_csv("./wdi.csv")
+head(wdi)
+```
+
+

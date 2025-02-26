@@ -1,0 +1,348 @@
+---
+title: "Exploratory Data Analysis: World Development Indicators"
+author: "Emma Jinright"
+date: "02-26-2025"
+format: 
+    revealjs:
+        theme: dracula
+        transition: fade
+        scrollable: true
+bibliography: references.bib
+---
+
+# Introduction
+
+## World Development Indicators
+
+This exploratory data analysis focuses on analyzing a few of the variables from the **World Development Indicators** dataset for 2022 made available by the World Bank [@worldbank].
+
+## Variables
+
+There are 14 variables:
+
+:::{.columns}
+:::{.column width="50%"}
+ - `country`
+ - `inflation_rate`
+ - `exports_gdp_share`
+ - `gdp_growth_rate`
+ - `gdp_per_capita`
+ - `adult_literacy_rate`
+ - `total_population`
+:::
+
+:::{.column width="50%"}
+ - `education_expenditure_gdp_share`
+ - `measles_immunisation_rate`
+ - `health_expenditure_gpd_share`
+ - `income_inequality`
+ - `unemployment_rate`
+ - `life_expectancy`
+ - `primary_school_enrolment_rate`
+:::
+:::
+
+## Focus Variables
+
+I will be focusing on 
+
+:::{.incremental}
+- **`total_population`**
+- **`life_expectancy`**
+- **`measles_immunisation_rate`**
+:::
+
+# Exploratory Data Analysis
+
+# Total Population
+
+## Average Population per Country
+
+```{r}
+#| label: EDA_1
+
+pacman::p_load(tidyverse, readr, dplyr, ggplot2, skimr, scales, knitr, kableExtra)
+
+wdi <- read_csv("./wdi.csv")
+
+wdi_avg_pop <- wdi %>% 
+  summarize(mean_total_population = mean(total_population),
+            sd_total_population = sd(total_population))
+kable(wdi_avg_pop, 
+      col.names = c("Average Population", "Population Standard Deviation"), 
+      format.args = list(big.mark = ","),
+      align = 'c',)
+```
+
+##
+
+```{r}
+#| label: EDA_1.2
+
+wdi_pop_rank <- wdi %>% 
+  select(country, total_population) %>%
+  arrange(desc(total_population))
+
+kable(head(wdi_pop_rank, 5),
+      caption = "Countries with the Largest Populations in 2022",
+      col.names = c("Country", "Population"),
+      format.args = list(big.mark = ","),
+      align = 'c')
+```
+
+## 
+
+```{r}
+#| label: EDA_1.3
+
+wdi_pop_rank_low <- wdi %>% 
+  select(country, total_population) %>%
+  arrange(total_population)
+
+kable(head(wdi_pop_rank_low, 5),
+      caption = "Countries with the Smallest Populations in 2022",
+      col.names = c("Country", "Population"),
+      format.args = list(big.mark = ","),
+      align = 'c')
+
+```
+
+# Life Expectancy
+
+## Average Life Expectancy per Country
+
+```{r}
+#| label: EDA_2
+
+wdi_avg_life <- wdi %>% 
+  
+  summarize(mean_life_expectancy = mean(life_expectancy, na.rm = TRUE),
+            sd_life_expectancy = sd(life_expectancy, na.rm = TRUE))
+kable(wdi_avg_life, 
+      col.names = c("Average Life Expectancy", "Life Expectancy Standard Deviation"), 
+      align = 'c',
+      digits = 2)
+```
+
+##
+
+```{r}
+#| label: EDA_2.2
+
+wdi_life_rank <- wdi %>% 
+  select(country, life_expectancy) %>%
+  filter(!is.na(life_expectancy)) %>% 
+  arrange(desc(life_expectancy))
+
+kable(head(wdi_life_rank, 5),
+      caption = "Countries with the Highest Life Expectancies in 2022",
+      col.names = c("Country", "Life Expectancy"),
+      align = 'c',
+      digits = 2)
+```
+
+## 
+
+```{r}
+#| label: EDA_2.3
+
+wdi_life_rank_low <- wdi %>% 
+  select(country, life_expectancy) %>%
+  filter(!is.na(life_expectancy)) %>% 
+  arrange(life_expectancy)
+
+kable(head(wdi_life_rank_low, 5),
+      caption = "Countries with the Lowest Life Expectancies in 2022",
+      col.names = c("Country", "Life Expectancy"),
+      align = 'c',
+      digits = 2)
+
+```
+
+# Measles Immunization Rate
+
+This variable represents the **percentage of the population age 12 to 23 months that is vaccinated against measles** [@CDCmeasles].
+
+## Average Immunization Rate per Country in Percentages
+
+```{r}
+#| label: EDA_3
+
+wdi_avg_measles <- wdi %>% 
+  summarize(mean_measles_immunisation_rate = mean(measles_immunisation_rate, na.rm = TRUE),
+            sd_measles_immunisation_rate = sd(measles_immunisation_rate, na.rm = TRUE))
+kable(wdi_avg_measles, 
+      col.names = c("Average Immunization Rate", "Immunization Rate Standard Deviation"), 
+      align = 'c',
+      digits = 2)
+```
+
+##
+
+```{r}
+#| label: EDA_3.2
+
+wdi_measles_rank <- wdi %>% 
+  select(country, measles_immunisation_rate) %>%
+  filter(!is.na(measles_immunisation_rate)) %>% 
+  arrange(desc(measles_immunisation_rate))
+
+kable(head(wdi_measles_rank, 5),
+      caption = "Countries with the Highest Percentage of Measles Immunization in 2022",
+      col.names = c("Country", "Percent Immunization for Measles"),
+      align = 'c',
+      digits = 2)
+```
+
+## 
+
+```{r}
+#| label: EDA_3.3
+
+wdi_measles_rank_low <- wdi %>% 
+  select(country, measles_immunisation_rate) %>%
+  filter(!is.na(measles_immunisation_rate)) %>% 
+  arrange(measles_immunisation_rate)
+
+kable(head(wdi_measles_rank_low, 5),
+      caption = "Countries with the Lowest Percentage of Measles Immunization in 2022",
+      col.names = c("Country", "Percent Immunization for Measles"),
+      align = 'c',
+      digits = 2)
+
+```
+
+## Measles Protection
+
+According to the United States' Center for Disease Control and Prevention (CDC), a vaccination rate of 95% of both doses of the measles vaccine means that the population is protected from outbreaks.
+
+```{r}
+#| label: EDA_3.4
+
+wdi_measles <- wdi_measles_rank %>% 
+  summarize(n_countries = n(),
+            n_countries_95 = sum(measles_immunisation_rate >= 95),
+            percent_95 = (sum(measles_immunisation_rate >= 95)/n())*100)
+
+kable(wdi_measles,
+     col.names = c("Number of Countries", "Number of Countries with Measles Immunization Rates At or Above 95%", "Percentage of Countries with Measles Immunization Rates At or Above 95%"),
+     align = 'c',
+     digits = 2)
+```
+
+# Figures & Tables
+
+##
+
+```{r}
+#| label: fig-pop
+#| echo: false
+#| message: false
+#| warning: false
+#| fig.cap: "This is a bar graph displaying the total population for each country in the top 15% of populations by measles immunization rate (Source: @worldbank)."
+
+wdi_analysis_1 <- wdi %>% 
+   filter(!(is.na(measles_immunisation_rate)) & (total_population >= quantile(total_population, 0.85)) ) %>% 
+  arrange(desc(total_population)) %>% 
+  mutate(vac_95 = ifelse(measles_immunisation_rate >= 95, "Protected", "Unprotected"),
+         country = factor(country, levels = country)) %>% 
+  select(country, total_population, life_expectancy, measles_immunisation_rate, vac_95)
+
+ggplot(data = wdi_analysis_1, aes(x=country,y=total_population, group=vac_95, fill=vac_95)) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(
+    breaks = seq(0, 2500000000, by = 100000000),
+    labels = label_comma(scale = 1e-9, suffix = "B")) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +  
+  labs(title = "Total Population of Countries by Measles Vaccination Percentage", x = "Country", y = "Total Population (in billions)")
+
+```
+
+##
+
+```{r}
+#| label: fig-life
+#| echo: false
+#| message: false
+#| warning: false
+#| fig.cap: "This is a bar graph displaying the life expectancy for each country in the top 15% of populations by measles immunization rate (Source: @worldbank)."
+
+wdi_analysis_2 <- wdi %>% 
+   filter(!(is.na(measles_immunisation_rate)) & (total_population >= quantile(total_population, 0.85)) ) %>% 
+  arrange(desc(life_expectancy)) %>% 
+  mutate(vac_95 = ifelse(measles_immunisation_rate >= 95, "Protected", "Unprotected"),
+         country = factor(country, levels = country)) %>% 
+  select(country, total_population, life_expectancy, measles_immunisation_rate, vac_95)
+
+ggplot(data = wdi_analysis_2, aes(x=country,y=life_expectancy, group=vac_95, fill=vac_95)) +
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +  # Rotating x-axis labels for better readability
+  labs(title = "Life Expectancy of Countries by Measles Vaccination Percentage", x = "Country", y = "Life Expectancy")
+
+```
+
+## 
+
+```{r}
+#| label: fig-scatter
+#| echo: false
+#| message: false
+#| warning: false
+#| fig.cap: "This is a scatter plot showing the relationship between total population and life expectancy by measles immunization rate (Source: @worldbank)."
+
+wdi_analysis_3 <- wdi %>% 
+   filter(!(is.na(measles_immunisation_rate))) %>% 
+  arrange(desc(total_population)) %>% 
+  mutate(vac_95 = ifelse(measles_immunisation_rate >= 95, "Protected", "Unprotected"),
+         country = factor(country, levels = country)) %>% 
+  select(country, total_population, life_expectancy, measles_immunisation_rate, vac_95)
+
+ggplot(data = filter(wdi_analysis_3, !is.na(life_expectancy)), aes(x=life_expectancy,y=total_population, group=vac_95, color=vac_95)) +
+  geom_point() +
+  scale_y_continuous(
+    breaks = seq(0, 2500000000, by = 100000000),
+    labels = label_comma(scale = 1e-9, suffix = "B")) +
+  scale_x_continuous(
+    breaks = seq(50, 85, by = 5),
+    limits = c(50, 85)) +
+  labs(title = "Total Population vs Life Expectancy by \nMeasles Vaccination Percentage", x = "Life Expectancy (in years)", y = "Total Population (in billions)")
+
+```
+
+##
+
+```{r}
+#| label: tbl-overview
+#| echo: false
+#| message: false
+#| warning: false
+
+overview_data <- wdi %>% 
+     filter(!(is.na(measles_immunisation_rate)) & !(is.na(life_expectancy))) %>% 
+  mutate(vac_95 = ifelse(measles_immunisation_rate >= 95, "Protected", "Unprotected")) %>% 
+  group_by(vac_95) %>% 
+  summarize(average_population = mean(total_population),
+            sd_population = sd(total_population),
+            average_life_expectancy = mean(life_expectancy),
+            sd_life_expectancy = sd(life_expectancy))
+
+kable(overview_data, caption = "Population and Life Expectancy of Countries by Protection Against Measles",
+      digits = 2,
+      col.names = c("Is the Population Protected Against Measles?", "Average Population", "Population Standard Deviation", "Average Life Expectancy", "Life Expectancy Standard Deviation"),
+      format.args = list(big.mark = ","),
+      align = 'c',
+      booktabs = TRUE) %>% 
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE) %>%
+  row_spec(0, bold = TRUE, color = "white", background = "#2f4f4f") %>% 
+  column_spec(1, bold = TRUE)
+
+```
+
+# Conclusions
+
+##
+- Good overview of statistics surrounding total population, life expectancy, and measles immunization rates for countries in 2022
+- Future Steps:
+    - Regression Analysis to determine the significance of relationships described above
+
+## References

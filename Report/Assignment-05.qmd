@@ -1,0 +1,245 @@
+---
+title: "Assignment-05"
+subtitle: "Exploratory Data Analysis of the World Development Indicators dataset"
+author: "Emma Jinright"
+date: "02-26-2025"
+output:
+  HTML: default
+  PDF: default
+geometry: margin=1in
+fontsize: 12pt
+papersize: a4 
+fig-width: 6
+fig-height: 4
+code-fold: true
+chunk-output-width: 6.5in
+bibliography: references.bib
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+pacman::p_load(tidyverse, readr, dplyr, ggplot2, skimr, scales, knitr, kableExtra)
+```
+
+# Introduction
+
+This exploratory data analysis focuses on analyzing a few of the variables from the **World Development Indicators** dataset for 2022 made available by the World Bank [@worldbank]. First, I will download the dataset, display the first five rows, and look at the structure of the variables in the dataset.
+
+```{r}
+#| label: dataset
+
+wdi <- read_csv("./wdi.csv")
+head(wdi, 5)
+str(wdi)
+```
+
+Here we can see that this dataset contains information on **217 countries** and includes **14 variables**: `country`, `inflation_rate`, `exports_gdp_share`, `gdp_growth_rate`, `gdp_per_capita`, `adult_literacy_rate`, `primary_school_enrolment_rate`, `education_expenditure_gdp_share`, `measles_immunisation_rate`, `health_expenditure_gpd_share`, `income_inequality`, `unemployment_rate`, `life_expectancy`, and `total_population`. Additionally, by default, the dataset is arranged alphabetically by country name.
+
+---
+
+# Exploratory Data Analysis
+
+For the exploratory data analysis, I will be focusing on the variables of **`total_population`**, **`life expectancy`**, and **`measles_immunisation_rate`**. 
+
+## Total Population
+
+The first variable I will be looking at is **`total_population`**.
+
+```{r}
+#| label: EDA_1
+
+wdi_avg_pop <- wdi %>% 
+  summarize(mean_total_population = mean(total_population),
+            sd_total_population = sd(total_population))
+as_tibble(wdi_avg_pop)
+
+wdi_pop_rank <- wdi %>% 
+  select(country, total_population) %>%
+  arrange(desc(total_population))
+head(wdi_pop_rank, 5)
+tail(wdi_pop_rank, 5)
+
+```
+
+Here, we can see that the average population per country is `r wdi_avg_pop$mean_total_population` with a standard deviation of `r wdi_avg_pop$sd_total_population` people. Additionally, we can see that **India has the largest population in 2022** with China, the United States, Indonesia, and Pakistan rounding out the top five respectively. On the lower end, **Tuvalu had the smallest population in 2022** with Nauru, Palau, the British Virgin Islands, and the French part of St. Martin rounding out the bottom five respectively.
+
+## Life Expectancy
+
+The next variable I will analyze is **`life_expectancy`**.
+
+```{r}
+#| label: EDA_2
+
+wdi_avg_life <- wdi %>% 
+  
+  summarize(mean_life_expectancy = mean(life_expectancy, na.rm = TRUE),
+            sd_life_expectancy = sd(life_expectancy, na.rm = TRUE))
+as_tibble(wdi_avg_life)
+
+wdi_life_rank <- wdi %>% 
+  select(country, life_expectancy) %>%
+  filter(!is.na(life_expectancy)) %>% 
+  arrange(desc(life_expectancy))
+head(wdi_life_rank, 5)
+tail(wdi_life_rank, 5)
+```
+
+Here, we see that the average life expectancy across all countries is `r wdi_avg_life$mean_life_expectancy` years with a standard deviation of `r wdi_avg_life$sd_life_expectancy`. **Macao had the highest life expectancy in 2022** with Liechtenstein, Japan, Hong Kong, and French Polynesia not far behind. On the other end, **Chad had the lowest life expectancy in 2022** with the other bottom five countries being Lesotho, Nigeria, Central African Republic, an South Sudan.
+
+## Measles Immunization Rate
+
+The final variable I will be analyzing is the **`measles_immunisation_rate`** variable. This variable represents the **percentage of the population age 12 to 23 months that is vaccinated against measles**.
+
+```{r}
+#| label: EDA_3
+
+wdi_avg_measles <- wdi %>% 
+  summarize(mean_measles_immunisation_rate = mean(measles_immunisation_rate, na.rm = TRUE),
+            sd_measles_immunisation_rate = sd(measles_immunisation_rate, na.rm = TRUE))
+as_tibble(wdi_avg_measles)
+
+wdi_measles_rank <- wdi %>% 
+  select(country, measles_immunisation_rate) %>%
+  filter(!is.na(measles_immunisation_rate)) %>% 
+  arrange(desc(measles_immunisation_rate))
+head(wdi_measles_rank, 5)
+tail(wdi_measles_rank, 5)
+
+wdi_measles <- wdi_measles_rank %>% 
+  summarize(n_countries = n(),
+            n_countries_95 = sum(measles_immunisation_rate >= 95),
+            percent_95 = (sum(measles_immunisation_rate >= 95)/n())*100)
+```
+
+Above, we can see that the average measles immunization rate across the world is `r round(wdi_avg_measles$mean_measles_immunisation_rate, 3)`% with a standard deviation of `r round(wdi_avg_measles$sd_measles_immunisation_rate, 3)`%. **The countries with the highest measles vaccination rates in 2022 were Antigua and Barbuda, Bahrain, China, Cuba, and Fiji**. **The countries with the lowest measles vaccination rates in 2022 were the Democratic People's Republic of Korea (North Korea), Montenegro, Angola, Syrian Arab Republic, and the Central African Republic**. I thought it was odd that North Korea had a reported measles immunization rate of 0%. After some research, it appears this is likely a typo in the dataset as data by WHO and UNICEF reported that North Korea had a measles immunization rate of **67% in 2022** [@worldbank].
+
+Additionally, out of the 193 countries had information regarding measles immunization rates, only **65** of these countries have reached an immunization rate of at least 95%. According to the United States' Center for Disease Control and Prevention (CDC), a vaccination rate of 95% of both doses of the measles vaccine means that the population is protected from outbreaks [@CDCmeasles]. This means that `r round(wdi_measles$percent_95, 3)`% of countries have  measles immunization rate of at least 95%.
+
+## Plots
+
+Next, I will visualize the variables I discussed above. I will begin with looking at total population for each country and their measles vaccination rate.
+
+```{r}
+#| label: fig-pop
+#| echo: false
+#| message: false
+#| warning: false
+#| fig.cap: "This is a bar graph displaying the total population for each country in the top 15% of populations by measles immunization rate (Source: @worldbank)."
+
+wdi_analysis_1 <- wdi %>% 
+   filter(!(is.na(measles_immunisation_rate)) & (total_population >= quantile(total_population, 0.85)) ) %>% 
+  arrange(desc(total_population)) %>% 
+  mutate(vac_95 = ifelse(measles_immunisation_rate >= 95, "Protected", "Unprotected"),
+         country = factor(country, levels = country)) %>% 
+  select(country, total_population, life_expectancy, measles_immunisation_rate, vac_95)
+
+ggplot(data = wdi_analysis_1, aes(x=country,y=total_population, group=vac_95, fill=vac_95)) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(
+    breaks = seq(0, 2500000000, by = 100000000),
+    labels = label_comma(scale = 1e-9, suffix = "B")) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +  
+  labs(title = "Total Population of Countries by Measles Vaccination Percentage", x = "Country", y = "Total Population (in billions)")
+
+```
+
+Above, I have created @fig-pop, a graph of the countries that have a population in the top 15% of the world in order to make the bar chart easier to view. This then shows each of those countries' total population in billions and whether or not they have achieved a measles vaccination rate of at least 95% or not. It does not appear that total population is related to measles vaccination rate for the countries in the top 15% of total population. It did surprise me to find out that the United States was not at 95% vaccination rate for children age 12 to 23 months in 2022. After some research, I found that kindergarten vaccination rates were above 95% during the 2019 to 2020 school year, but during the 2023-2024 school year dropped back below 95% [@CDCmeaslesUS]. This is due to more parents being wary of vaccines.
+
+Next, I will look at life expectancy and measles vaccination rate.
+
+```{r}
+#| label: fig-life
+#| echo: false
+#| message: false
+#| warning: false
+#| fig.cap: "This is a bar graph displaying the life expectancy for each country in the top 15% of populations by measles immunization rate (Source: @worldbank)."
+
+wdi_analysis_2 <- wdi %>% 
+   filter(!(is.na(measles_immunisation_rate)) & (total_population >= quantile(total_population, 0.85)) ) %>% 
+  arrange(desc(life_expectancy)) %>% 
+  mutate(vac_95 = ifelse(measles_immunisation_rate >= 95, "Protected", "Unprotected"),
+         country = factor(country, levels = country)) %>% 
+  select(country, total_population, life_expectancy, measles_immunisation_rate, vac_95)
+
+ggplot(data = wdi_analysis_2, aes(x=country,y=life_expectancy, group=vac_95, fill=vac_95)) +
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +  # Rotating x-axis labels for better readability
+  labs(title = "Life Expectancy of Countries by Measles Vaccination Percentage", x = "Country", y = "Life Expectancy")
+
+```
+
+This is @fig-life. This graph is of the countries that have a population in the top 15% of the world in order to make the bar chart easier to view. This then shows each of those countries' life expectancy and whether or not they have achieved a measles vaccination rate of at least 95% or not. For countries that have a total population within the top 15%, it appears that more countries that do not have a measles vaccination rate of at least 95% have lower life expectancies, although this is just based off visuals and may not be true for the rest of the countries with smaller total populations.
+
+Lastly, I will visualize a scatterplot of total population and life expectancy by measles vaccination rates.
+
+```{r}
+#| label: fig-scatter
+#| echo: false
+#| message: false
+#| warning: false
+#| fig.cap: "This is a scatter plot showing the relationship between total population and life expectancy by measles immunization rate (Source: @worldbank)."
+
+wdi_analysis_3 <- wdi %>% 
+   filter(!(is.na(measles_immunisation_rate))) %>% 
+  arrange(desc(total_population)) %>% 
+  mutate(vac_95 = ifelse(measles_immunisation_rate >= 95, "Protected", "Unprotected"),
+         country = factor(country, levels = country)) %>% 
+  select(country, total_population, life_expectancy, measles_immunisation_rate, vac_95)
+
+ggplot(data = filter(wdi_analysis_3, !is.na(life_expectancy)), aes(x=life_expectancy,y=total_population, group=vac_95, color=vac_95)) +
+  geom_point() +
+  scale_y_continuous(
+    breaks = seq(0, 2500000000, by = 100000000),
+    labels = label_comma(scale = 1e-9, suffix = "B")) +
+  scale_x_continuous(
+    breaks = seq(50, 85, by = 5),
+    limits = c(50, 85)) +
+  labs(title = "Total Population vs Life Expectancy by \nMeasles Vaccination Percentage", x = "Life Expectancy (in years)", y = "Total Population (in billions)")
+
+```
+
+In @fig-scatter, you can see the total population of each country in billions vs the country's life expectancy by whether or not they are protected against measles defined as having at least a 95% measles vaccination rate. It is interesting to see that although some countries who are unprotected against measles do have high life expectancies, no country that has at least a 95% vaccination rate against measles has a life expectancy lower than approximately 64 years.
+
+## Table
+
+```{r}
+#| label: tbl-overview
+#| echo: false
+#| message: false
+#| warning: false
+
+overview_data <- wdi %>% 
+     filter(!(is.na(measles_immunisation_rate)) & !(is.na(life_expectancy))) %>% 
+  mutate(vac_95 = ifelse(measles_immunisation_rate >= 95, "Protected", "Unprotected")) %>% 
+  group_by(vac_95) %>% 
+  summarize(average_population = mean(total_population),
+            sd_population = sd(total_population),
+            average_life_expectancy = mean(life_expectancy),
+            sd_life_expectancy = sd(life_expectancy))
+
+kable(overview_data, caption = "Population and Life Expectancy of Countries by Protection Against Measles",
+      digits = 2,
+      col.names = c("Is the Population Protected Against Measles?", "Average Population", "Population Standard Deviation", "Average Life Expectancy", "Life Expectancy Standard Deviation"),
+      format.args = list(big.mark = ","),
+      align = 'c',
+      booktabs = TRUE) %>% 
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE) %>%
+  row_spec(0, bold = TRUE, color = "white", background = "#2f4f4f") %>% 
+  column_spec(1, bold = TRUE)
+
+```
+
+Above, in @tbl-overview, you can see the breakdown of population and life expectancy by whether or not the country has reached the 95% vaccination rate needed to be protected against measles. The average population for unprotected countries is lower but both average populations have a large standard deviation. Additionally, the unprotected countries have a lower life expectancy than protected countries although these overlap when you consider the average life expectancy within one standard deviation.
+
+---
+
+# Conclusions
+
+Overall, this exploratory data analysis gave a good overview of statistics surrounding total population, life expectancy, and measles immunization rates for countries in 2022. Future steps would include regression analysis to determine the significance of the relationships described above.
+
+# References
+
+
+
